@@ -1,0 +1,225 @@
+[
+  {
+    "name": "ReadManifest",
+    "type": "Lookup",
+    "policy": {
+      "timeout": "0.01:00:00",
+      "retry": 0,
+      "retryIntervalInSeconds": 30,
+      "secureInput": false,
+      "secureOutput": false
+    },
+    "typeProperties": {
+      "source": {
+        "type": "JsonSource",
+        "storeSettings": {
+          "type": "AzureBlobFSReadSettings",
+          "recursive": false
+        },
+        "formatSettings": {
+          "type": "JsonReadSettings",
+          "compressionProperties": null
+        }
+      },
+      "dataset": {
+        "referenceName": "ds_landing_manifest",
+        "type": "DatasetReference",
+        "parameters": {
+          "folder_path": {
+            "value": "@concat('olist/', pipeline().parameters.snapshot_id)",
+            "type": "Expression"
+          },
+          "file_name": {
+            "value": "@'manifest.json'",
+            "type": "Expression"
+          }
+        }
+      },
+      "firstRowOnly": true
+    }
+  },
+  {
+    "name": "ValidateManifest",
+    "type": "IfCondition",
+    "dependsOn": [
+      {
+        "activity": "ReadManifest",
+        "dependencyConditions": [
+          "Succeeded"
+        ]
+      }
+    ],
+    "typeProperties": {
+      "expression": {
+        "value": "@and(and(equals(activity('ReadManifest').output.firstRow.manifest_version, 1), equals(activity('ReadManifest').output.firstRow.source, 'olist')), and(equals(activity('ReadManifest').output.firstRow.snapshot_id, pipeline().parameters.snapshot_id), greater(length(activity('ReadManifest').output.firstRow.files), 0)))",
+        "type": "Expression"
+      },
+      "ifTrueActivities": [],
+      "ifFalseActivities": [
+        {
+          "name": "RejectManifest",
+          "type": "Fail",
+          "typeProperties": {
+            "message": "Invalid manifest: expected version 1, source olist, matching snapshot_id and nonempty files.",
+            "errorCode": "INVALID_MANIFEST"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "CopyFiles",
+    "type": "ForEach",
+    "dependsOn": [
+      {
+        "activity": "ValidateManifest",
+        "dependencyConditions": [
+          "Succeeded"
+        ]
+      }
+    ],
+    "typeProperties": {
+      "items": {
+        "value": "@activity('ReadManifest').output.firstRow.files",
+        "type": "Expression"
+      },
+      "isSequential": true,
+      "activities": [
+        {
+          "name": "CopyManifestFile",
+          "type": "Copy",
+          "policy": {
+            "timeout": "0.01:00:00",
+            "retry": 0,
+            "retryIntervalInSeconds": 30,
+            "secureInput": false,
+            "secureOutput": false
+          },
+          "typeProperties": {
+            "source": {
+              "type": "BinarySource",
+              "storeSettings": {
+                "type": "AzureBlobFSReadSettings",
+                "recursive": false
+              },
+              "formatSettings": {
+                "type": "BinaryReadSettings",
+                "compressionProperties": null
+              }
+            },
+            "sink": {
+              "type": "BinarySink",
+              "storeSettings": {
+                "type": "AzureBlobFSWriteSettings"
+              }
+            },
+            "enableStaging": false
+          },
+          "inputs": [
+            {
+              "referenceName": "ds_landing_binary",
+              "type": "DatasetReference",
+              "parameters": {
+                "folder_path": {
+                  "value": "@concat('olist/', pipeline().parameters.snapshot_id, '/data')",
+                  "type": "Expression"
+                },
+                "file_name": {
+                  "value": "@item().file_name",
+                  "type": "Expression"
+                }
+              }
+            }
+          ],
+          "outputs": [
+            {
+              "referenceName": "ds_bronze_binary",
+              "type": "DatasetReference",
+              "parameters": {
+                "folder_path": {
+                  "value": "@concat('olist/', pipeline().parameters.snapshot_id, '/attempts/', pipeline().RunId, '/data')",
+                  "type": "Expression"
+                },
+                "file_name": {
+                  "value": "@item().file_name",
+                  "type": "Expression"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "CopyOriginalManifest",
+    "type": "Copy",
+    "policy": {
+      "timeout": "0.01:00:00",
+      "retry": 0,
+      "retryIntervalInSeconds": 30,
+      "secureInput": false,
+      "secureOutput": false
+    },
+    "typeProperties": {
+      "source": {
+        "type": "BinarySource",
+        "storeSettings": {
+          "type": "AzureBlobFSReadSettings",
+          "recursive": false
+        },
+        "formatSettings": {
+          "type": "BinaryReadSettings",
+          "compressionProperties": null
+        }
+      },
+      "sink": {
+        "type": "BinarySink",
+        "storeSettings": {
+          "type": "AzureBlobFSWriteSettings"
+        }
+      },
+      "enableStaging": false
+    },
+    "inputs": [
+      {
+        "referenceName": "ds_landing_binary",
+        "type": "DatasetReference",
+        "parameters": {
+          "folder_path": {
+            "value": "@concat('olist/', pipeline().parameters.snapshot_id)",
+            "type": "Expression"
+          },
+          "file_name": {
+            "value": "@'manifest.json'",
+            "type": "Expression"
+          }
+        }
+      }
+    ],
+    "outputs": [
+      {
+        "referenceName": "ds_bronze_binary",
+        "type": "DatasetReference",
+        "parameters": {
+          "folder_path": {
+            "value": "@concat('olist/', pipeline().parameters.snapshot_id, '/attempts/', pipeline().RunId)",
+            "type": "Expression"
+          },
+          "file_name": {
+            "value": "@'manifest.json'",
+            "type": "Expression"
+          }
+        }
+      }
+    ],
+    "dependsOn": [
+      {
+        "activity": "CopyFiles",
+        "dependencyConditions": [
+          "Succeeded"
+        ]
+      }
+    ]
+  }
+]
