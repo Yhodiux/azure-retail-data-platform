@@ -1,0 +1,6 @@
+workspace_host        = "https://adb-7405611943709721.1.azuredatabricks.net"
+workspace_resource_id = "/subscriptions/c569ffc1-cb82-4e95-a30b-0b25b1628ea3/resourceGroups/rg-retail-data-dev/providers/Microsoft.Databricks/workspaces/dbw-retail-data-dev-c569ffc1"
+access_connector_id   = "/subscriptions/c569ffc1-cb82-4e95-a30b-0b25b1628ea3/resourceGroups/rg-retail-data-dev/providers/Microsoft.Databricks/accessConnectors/ac-retail-data-dev-databricks"
+storage_account_name  = "stretaildevc569ffc1"
+# Replace with an existing narrow principal before generating the deployment plan.
+execution_principal = "<existing-account-principal>"
