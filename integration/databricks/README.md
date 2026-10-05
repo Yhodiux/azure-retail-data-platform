@@ -1,4 +1,4 @@
-# Azure Retail Data Platform — Bronze → Silver → Gold
+# Azure Retail Data Platform — Bronze → Silver → Gold → Synapse Serverless
 
 Azure Databricks Premium and Unity Catalog are deployed. Access to the Audit,
 Bronze, Silver and Gold external volumes uses an Azure Databricks Access Connector
@@ -45,7 +45,32 @@ published attempt and writes the five datasets plus `validation.json` in one tas
 Existing Gold output is rejected rather than overwritten automatically; this is
 a simple snapshot output, without a second Silver-style attempts/build framework.
 
-**Synapse Serverless: next stage. Power BI: next stage.**
+## SQL serving on Gold
+
+Source → ADF → Bronze → Databricks Silver → Databricks Gold → Synapse Serverless
+→ Power BI (pending).
+
+Synapse Serverless is deployed and validated on the existing Gold Parquet:
+Gold ADLS → Synapse Serverless → SQL views in `retail_analytics`, without copying
+the data. Workspace `syn-retail-data-dev-c569ffc1` runs in `centralus` because
+SQL provisioning restrictions prevented deployment in `eastus` and `eastus2`.
+Endpoint: `syn-retail-data-dev-c569ffc1-ondemand.sql.azuresynapse.net`.
+
+| SQL view | Validated rows |
+|---|---:|
+| dbo.vw_sales_by_state | 27 |
+| dbo.vw_sales_by_category | 74 |
+| dbo.vw_sales_by_payment_type | 5 |
+| dbo.vw_top_sellers | 3,095 |
+| dbo.vw_top_customers | 96,135 |
+
+Real COUNT queries match Gold, and five analytical queries verified leading
+states/categories, payment distribution, sellers and customers. Clients use
+Microsoft Entra authentication; the Workspace Managed Identity has read-only
+access to Gold through a database-scoped credential. SQL schemas preserve Gold
+decimal precision. [Serving scripts and operation](../../serving/synapse/README.md).
+
+**Power BI: next stage.**
 
 ## Bundle and compute
 
