@@ -1,0 +1,67 @@
+resources:
+  jobs:
+    retail_silver:
+      name: retail-data-dev-bronze-to-silver
+      max_concurrent_runs: 1
+      timeout_seconds: 1800
+      parameters:
+        - name: snapshot_id
+          default: ""
+        - name: audit_complete_sha256
+          default: ""
+      job_clusters:
+        - job_cluster_key: silver_single_node
+          new_cluster:
+            spark_version: 15.4.x-scala2.12
+            node_type_id: Standard_D4ds_v4
+            kind: CLASSIC_PREVIEW
+            is_single_node: true
+            use_ml_runtime: false
+            runtime_engine: STANDARD
+            data_security_mode: DATA_SECURITY_MODE_DEDICATED
+            single_user_name: aldevweb@hotmail.com
+            azure_attributes:
+              availability: ON_DEMAND_AZURE
+      tasks:
+        - task_key: build_silver
+          job_cluster_key: silver_single_node
+          max_retries: 0
+          spark_python_task:
+            python_file: ../integration/databricks/build_silver.py
+            parameters:
+              - --snapshot-id
+              - "{{job.parameters.snapshot_id}}"
+              - --complete-sha256
+              - "{{job.parameters.audit_complete_sha256}}"
+              - --job-run-id
+              - "{{job.run_id}}"
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+          libraries:
+            - whl: ../dist/retail_data_core-*.whl
+            - whl: ../dist/retail_databricks_adapters-*.whl
+        - task_key: validate_and_publish_silver
+          depends_on:
+            - task_key: build_silver
+          job_cluster_key: silver_single_node
+          max_retries: 0
+          spark_python_task:
+            python_file: ../integration/databricks/validate_and_publish_silver.py
+            parameters:
+              - --snapshot-id
+              - "{{job.parameters.snapshot_id}}"
+              - --complete-sha256
+              - "{{job.parameters.audit_complete_sha256}}"
+              - --build-id
+              - "{{tasks.build_silver.values.build_id}}"
+              - --attempt-id
+              - "{{tasks.build_silver.values.attempt_id}}"
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+          libraries:
+            - whl: ../dist/retail_data_core-*.whl
+            - whl: ../dist/retail_databricks_adapters-*.whl

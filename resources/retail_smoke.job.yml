@@ -1,0 +1,43 @@
+# Temporary dev smoke resource, separate from the prepared Silver pipeline.
+resources:
+  jobs:
+    retail_smoke:
+      name: retail-data-dev-read-only-smoke
+      max_concurrent_runs: 1
+      timeout_seconds: 1800
+      parameters:
+        - name: snapshot_id
+          default: ""
+        - name: audit_complete_sha256
+          default: ""
+      job_clusters:
+        - job_cluster_key: smoke_single_node
+          new_cluster:
+            spark_version: 15.4.x-scala2.12
+            node_type_id: Standard_D4ds_v4
+            kind: CLASSIC_PREVIEW
+            is_single_node: true
+            use_ml_runtime: false
+            runtime_engine: STANDARD
+            data_security_mode: DATA_SECURITY_MODE_DEDICATED
+            single_user_name: aldevweb@hotmail.com
+            azure_attributes:
+              availability: ON_DEMAND_AZURE
+      tasks:
+        - task_key: read_only_smoke
+          job_cluster_key: smoke_single_node
+          max_retries: 0
+          spark_python_task:
+            python_file: ../integration/databricks/read_only_smoke.py
+            parameters:
+              - --snapshot-id
+              - "{{job.parameters.snapshot_id}}"
+              - --complete-sha256
+              - "{{job.parameters.audit_complete_sha256}}"
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+          libraries:
+            - whl: ../dist/retail_data_core-*.whl
+            - whl: ../dist/retail_databricks_adapters-*.whl

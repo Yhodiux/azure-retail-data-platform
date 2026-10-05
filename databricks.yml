@@ -1,0 +1,73 @@
+bundle:
+  name: azure-retail-silver
+  databricks_cli_version: ">= 1.19.0"
+
+include:
+  - resources/retail_silver.job.yml
+  - resources/retail_smoke.job.yml
+
+workspace:
+  host: https://adb-7405611943709721.1.azuredatabricks.net
+  auth_type: azure-cli
+
+variables:
+  catalog:
+    default: dbw_retail_data_dev_c569ffc1
+  schema:
+    default: retail_data_dev
+
+artifacts:
+  core:
+    type: whl
+    path: .
+    build: python scripts/build_bundle_wheel.py
+    files:
+      - source: dist/retail_data_core-0.1.0-py3-none-any.whl
+  adapters:
+    type: whl
+    path: .
+    build: python scripts/build_adapter_wheel.py
+    files:
+      - source: dist/retail_databricks_adapters-0.1.0-py3-none-any.whl
+
+sync:
+  include:
+    - integration/**/*.py
+    - tooling/__init__.py
+    - tooling/landing_snapshot.py
+    - tooling/bronze_verification.py
+  exclude:
+    - instrucciones.txt
+    - archive/**
+    - reference/**
+    - infra/**
+    - .tools/**
+    - .databricks/**
+    - dist/**
+    - build/**
+    - integration/build/**
+    - integration/*.egg-info/**
+    - src/**
+    - tests/**
+    - packaging_tests/**
+    - integration_tests/**
+    - scripts/**
+    - "**/__pycache__/**"
+    - "**/*.tfstate*"
+    - "**/*.tfplan*"
+
+targets:
+  dev:
+    default: true
+    # Deploy exactly the reviewed wheel, rather than rebuilding ZIP bytes.
+    artifacts:
+      core:
+        build: python scripts/verify_approved_wheel.py
+      adapters:
+        build: python scripts/verify_approved_wheel.py
+    # Production mode avoids development-mode overrides of concurrency/retries.
+    mode: production
+    workspace:
+      root_path: /Workspace/Users/aldevweb@hotmail.com/.bundle/${bundle.name}/${bundle.target}
+    run_as:
+      user_name: aldevweb@hotmail.com

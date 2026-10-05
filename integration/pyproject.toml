@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools==75.8.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "retail-databricks-adapters"
+version = "0.1.0"
+description = "Databricks integration adapters, separate from the portable core"
+requires-python = ">=3.8,<3.12"
+dependencies = ["retail-data-core==0.1.0"]
+
+[tool.setuptools]
+packages = ["integration", "integration.databricks", "tooling"]
+package-dir = {"integration" = ".", "tooling" = "../tooling"}
+include-package-data = false
