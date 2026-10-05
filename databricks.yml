@@ -5,6 +5,7 @@ bundle:
 include:
   - resources/retail_silver.job.yml
   - resources/retail_smoke.job.yml
+  - resources/retail_gold.job.yml
 
 workspace:
   host: https://adb-7405611943709721.1.azuredatabricks.net

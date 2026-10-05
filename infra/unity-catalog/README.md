@@ -1,4 +1,15 @@
-# Unity Catalog foundation — Block 4C.2 closed
+# Unity Catalog storage foundation
+
+Block 4D extends the existing Access Connector credential with the Gold external
+location `el_retail_data_dev_gold`, an EXTERNAL `gold` volume under
+`dbw_retail_data_dev_c569ffc1.retail_data_dev`, and `READ_VOLUME`/`WRITE_VOLUME`
+for the existing execution principal. AzureRM grants the connector's Managed
+Identity Storage Blob Data Contributor only on the Gold container. The extension
+added one Azure RBAC resource and three UC resources, with no changes or destroys.
+Gold uses `/Volumes/dbw_retail_data_dev_c569ffc1/retail_data_dev/gold`, backed by
+`abfss://gold@stretaildevc569ffc1.dfs.core.windows.net/olist`.
+Landing remains outside the connector's data access. The foundation details
+below describe the original three-volume deployment in Block 4C.2.
 
 Block 4C.2c applied the hash-approved saved plan on 2026-10-04:
 **13 added, 0 changed, 0 destroyed**. Read-only API verification confirmed

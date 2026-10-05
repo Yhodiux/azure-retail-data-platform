@@ -39,6 +39,9 @@ class EntryBootstrapTests(unittest.TestCase):
     def test_publish_without_file_and_checkout_on_path(self):
         self.check_entry('validate_and_publish_silver.py')
 
+    def test_gold_without_file_and_checkout_on_path(self):
+        self.check_entry('build_gold.py')
+
 
 if __name__ == '__main__':
     unittest.main()

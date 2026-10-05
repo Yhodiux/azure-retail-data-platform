@@ -8,7 +8,8 @@ docker run --rm --network none --hostname retail-integration --add-host retail-i
     --mount "type=bind,source=$projectRoot/tooling,target=/workspace/tooling,readonly" `
     --mount "type=bind,source=$projectRoot/integration,target=/workspace/integration,readonly" `
     --mount "type=bind,source=$projectRoot/integration_tests,target=/workspace/integration_tests,readonly" `
-    --workdir /tmp --env PYTHONPATH=/opt/spark/python:/opt/spark/python/lib/py4j-0.10.9.7-src.zip:/workspace/src:/workspace `
+    --mount "type=bind,source=$projectRoot/tests,target=/workspace/tests,readonly" `
+    --workdir /tmp --env PYTHONPATH=/opt/spark/python:/opt/spark/python/lib/py4j-0.10.9.7-src.zip:/workspace/src:/workspace:/workspace/tests `
     --env PYTHONDONTWRITEBYTECODE=1 --env SPARK_LOCAL_IP=127.0.0.1 --env PYTHONWARNINGS=ignore::ResourceWarning `
     $image python3 -m unittest discover -s /workspace/integration_tests/spark -v
 if ($LASTEXITCODE -ne 0) { throw "Local Spark adapter tests failed" }

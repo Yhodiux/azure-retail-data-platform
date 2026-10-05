@@ -26,6 +26,7 @@ locals {
     audit  = { read_only = true, privileges = ["READ_VOLUME"] }
     bronze = { read_only = true, privileges = ["READ_VOLUME"] }
     silver = { read_only = false, privileges = ["READ_VOLUME", "WRITE_VOLUME"] }
+    gold   = { read_only = false, privileges = ["READ_VOLUME", "WRITE_VOLUME"] }
   }
 }
 

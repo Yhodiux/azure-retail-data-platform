@@ -1,0 +1,48 @@
+resources:
+  jobs:
+    retail_gold:
+      name: retail-data-dev-silver-to-gold
+      max_concurrent_runs: 1
+      timeout_seconds: 1800
+      parameters:
+        - name: snapshot_id
+          default: ""
+        - name: silver_build_id
+          default: ""
+        - name: silver_complete_sha256
+          default: ""
+      job_clusters:
+        - job_cluster_key: gold_single_node
+          new_cluster:
+            spark_version: 15.4.x-scala2.12
+            node_type_id: Standard_D4ds_v4
+            kind: CLASSIC_PREVIEW
+            is_single_node: true
+            use_ml_runtime: false
+            runtime_engine: STANDARD
+            data_security_mode: DATA_SECURITY_MODE_DEDICATED
+            single_user_name: aldevweb@hotmail.com
+            azure_attributes:
+              availability: ON_DEMAND_AZURE
+      tasks:
+        - task_key: build_gold
+          job_cluster_key: gold_single_node
+          max_retries: 0
+          spark_python_task:
+            python_file: ../integration/databricks/build_gold.py
+            parameters:
+              - --snapshot-id
+              - "{{job.parameters.snapshot_id}}"
+              - --silver-build-id
+              - "{{job.parameters.silver_build_id}}"
+              - --complete-sha256
+              - "{{job.parameters.silver_complete_sha256}}"
+              - --job-run-id
+              - "{{job.run_id}}"
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+          libraries:
+            - whl: ../dist/retail_data_core-*.whl
+            - whl: ../dist/retail_databricks_adapters-*.whl

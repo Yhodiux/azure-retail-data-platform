@@ -1,7 +1,7 @@
-# Azure Retail Data Platform — Databricks Silver pipeline
+# Azure Retail Data Platform — Bronze → Silver → Gold
 
 Azure Databricks Premium and Unity Catalog are deployed. Access to the Audit,
-Bronze and Silver external volumes uses an Azure Databricks Access Connector
+Bronze, Silver and Gold external volumes uses an Azure Databricks Access Connector
 with Managed Identity. Unity Catalog and AzureRM retain their existing Terraform
 ownership; the deployed Jobs are managed by the Databricks Asset Bundle.
 
@@ -16,13 +16,40 @@ A second execution with the same approved inputs on 2026-10-05 (run
 revalidation. It retained the original build, published attempt and COMPLETE
 SHA256 `79900b6c5db09df534697310dfaa3fa1120885420fab7cc5bb396566bff0b51c`,
 with one build/attempt and unchanged counts. Both runs' ephemeral compute
-terminated successfully. Gold publication, Synapse serving and Power BI
-integration remain subsequent work; local Gold transformation code does not
-constitute a deployed Gold pipeline.
+terminated successfully.
+
+`retail_gold` (Job `396644872610919`) completed Silver → Gold on 2026-10-05
+(run `336824124776750`, SUCCESS). It reuses the five Portable Data Core
+transformations and writes Parquet under `gold/olist/<snapshot_id>/datasets/`.
+Its ephemeral compute terminated successfully.
+
+| Gold dataset | Rows | Analytical grain |
+|---|---:|---|
+| sales_by_state | 27 | Customer state |
+| sales_by_category | 74 | Product category, including UNKNOWN |
+| sales_by_payment_type | 5 | Payment type |
+| top_sellers | 3,095 | Seller ID and state |
+| top_customers | 96,135 | Customer unique ID and state |
+
+All five persisted datasets passed schema, nonempty count, required-key,
+unique-grain and nonnegative-metric validation. Product sales reconcile to
+`13,591,643.70` for state/category/seller outputs; payments reconcile to
+`16,008,872.12` for payment-type/customer outputs. These are distinct measures:
+item price versus payment value. Item and payment-record counts also reconcile.
+Distinct order counts are not additive across categories, sellers or payment
+types because one order can span multiple groups. The two `top_*` datasets
+contain full grouped rankings, not a truncated top-N sample.
+
+Gold consumes the explicitly approved Silver build and COMPLETE hash, reads its
+published attempt and writes the five datasets plus `validation.json` in one task.
+Existing Gold output is rejected rather than overwritten automatically; this is
+a simple snapshot output, without a second Silver-style attempts/build framework.
+
+**Synapse Serverless: next stage. Power BI: next stage.**
 
 ## Bundle and compute
 
-Root `databricks.yml` includes the Silver and read-only smoke Job definitions. Target `dev`
+Root `databricks.yml` includes the Silver, Gold and read-only smoke Job definitions. Target `dev`
 uses the existing Azure workspace, Azure CLI authentication and development
 run_as `aldevweb@hotmail.com`. Target mode is `production` solely to preserve
 explicit concurrency/retry settings; this is still a development deployment.
@@ -30,7 +57,7 @@ The dev user is also admin/UC owner: this does not test least-privilege isolatio
 Production must separately approve a service identity, grants, ownership and
 run_as migration. No service principal or credential is created here.
 
-Jobs Compute is one ephemeral shared job cluster: DBR `15.4.x-scala2.12`,
+Each pipeline uses ephemeral single-node Jobs Compute: DBR `15.4.x-scala2.12`,
 `Standard_D4ds_v4`, `CLASSIC_PREVIEW`, `is_single_node=true`, STANDARD engine,
 Dedicated access mode assigned to the dev user, ON_DEMAND_AZURE and no policy.
 The CLI-normalized definition includes `num_workers=0`; other single-node
@@ -68,14 +95,15 @@ the real existing manifest contract, exact inventory and sizes/SHA256 of all nin
 original CSVs. Six supported core tables are processed: customers, orders,
 order_items, order_payments, products, sellers. Geolocation, reviews and category
 translation are integrity-checked but have no Silver transformation in the core.
-No new Silver transformation or Gold output is added.
+The Silver task processes these six tables; the Gold task consumes their
+published Parquet output through the existing core analytics functions.
 
 CSV parsing uses the core's explicit schemas, header verification, FAILFAST,
 UTF-8 and timestamp format `yyyy-MM-dd HH:mm:ss`; Spark timezone is UTC.
 The core performs normalization, schema/table/grain DQ and five referential
 checks. DQ and source re-verification must pass before any Silver attempt write.
 
-## Layout, identity and publication
+## Silver layout, identity and publication
 
 Cloud layout:
 `silver/olist/<snapshot_id>/builds/<build_id>/attempts/<job_run_id>/`.
@@ -164,6 +192,7 @@ Local evidence: 18 contract/API-boundary tests and 3 real Spark integration test
 the latter use the pinned existing Spark 3.5.4 Docker image, network disabled,
 synthetic CSVs and temporary local output. Fixtures use the REAL existing Bronze
 COMPLETE producer. Existing 47 tooling, 14 core and 3 packaging tests pass.
+Gold adds two Spark persistence/validation tests and an installed-launcher test.
 The deployed read-only smoke and successful Silver runs additionally verified
 runtime imports, volume access, native SDK authentication, compute startup and
 conditional publication on DBR 15.4. The second Silver run demonstrated
@@ -177,7 +206,7 @@ References:
 
 ## Installed adapter imports
 
-The three entry scripts use normal imports from installed packages, compatible
+All task entry scripts use normal imports from installed packages, compatible
 with the Workspace Python-task launcher executing source without defining the
 entry script's `__file__`.
 
@@ -185,7 +214,7 @@ entry script's `__file__`.
 containing the adapters and the two existing pure tooling contract modules.
 It depends only on `retail-data-core==0.1.0`; it does not copy the portable core
 or install PySpark/Databricks SDK. Those runtime services remain supplied by DBR.
-Both wheels are task libraries for smoke and Silver. The portable core wheel
+Both wheels are task libraries for smoke, Silver and Gold. The portable core wheel
 is unchanged. Explicit artifact sources and SHA256 guards ensure deployment
 uploads exactly the reviewed wheels; nested build/egg-info directories are excluded.
 

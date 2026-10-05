@@ -3,7 +3,7 @@ import hashlib
 from pathlib import Path
 
 APPROVED_SHA256 = '955b3b1884c18415d5f8bd06a6fefbead63f36f74f9eade13e7569d0999ada2b'
-ADAPTER_SHA256 = 'ff58ac9222ba984953a3d18960a4ff4d0d0081bc3424a67f36e8a0736fe5bf3a'
+ADAPTER_SHA256 = '9a3ca11eaeedcec0a3143c2e1ade126873b597a9391a762ee1033013782ad8a0'
 
 
 def main():

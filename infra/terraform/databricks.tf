@@ -6,6 +6,7 @@ locals {
     audit  = "Storage Blob Data Reader"
     bronze = "Storage Blob Data Reader"
     silver = "Storage Blob Data Contributor"
+    gold   = "Storage Blob Data Contributor"
   }
 }
 
@@ -44,7 +45,7 @@ resource "azurerm_role_assignment" "databricks_container" {
 }
 
 # User delegation keys require account scope; blob-data permissions stay scoped
-# to the three containers above.
+# to the four containers above.
 resource "azurerm_role_assignment" "databricks_blob_delegator" {
   scope                            = azurerm_storage_account.lake.id
   role_definition_name             = "Storage Blob Delegator"
