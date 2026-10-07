@@ -48,7 +48,7 @@ a simple snapshot output, without a second Silver-style attempts/build framework
 ## SQL serving on Gold
 
 Source → ADF → Bronze → Databricks Silver → Databricks Gold → Synapse Serverless
-→ Power BI (pending).
+→ Power BI Import via CSV extracts from the validated Synapse views.
 
 Synapse Serverless is deployed and validated on the existing Gold Parquet:
 Gold ADLS → Synapse Serverless → SQL views in `retail_analytics`, without copying
@@ -70,7 +70,7 @@ Microsoft Entra authentication; the Workspace Managed Identity has read-only
 access to Gold through a database-scoped credential. SQL schemas preserve Gold
 decimal precision. [Serving scripts and operation](../../serving/synapse/README.md).
 
-**Power BI: next stage.**
+**Power BI: completed.** The final PBIX imports the five Synapse CSV extracts; it does not maintain a direct/live Synapse connection. See the [dashboard and authentication explanation](../../README.md#power-bi-dashboard).
 
 ## Bundle and compute
 

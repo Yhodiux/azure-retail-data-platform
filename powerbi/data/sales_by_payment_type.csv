@@ -1,0 +1,6 @@
+"payment_type","total_orders","total_sales","avg_payment_value","total_payment_records","delivered_orders","delivered_payment_records","delivered_payment_value","delivered_avg_payment_value","delivered_avg_order_payment_value"
+"credit_card","76505","12542084.19","163.32","76795","74304","74586","12101094.88","162.24","162.86"
+"boleto","19784","2869361.27","145.03","19784","19191","19191","2769932.58","144.33","144.33"
+"voucher","3866","379436.87","65.70","5775","3679","5493","343013.19","62.45","93.24"
+"debit_card","1528","217989.79","142.57","1529","1485","1486","208421.12","140.26","140.35"
+"not_defined","3","0.00","0.00","3","0","0","0.00",,

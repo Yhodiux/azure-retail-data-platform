@@ -62,7 +62,7 @@ Gold rankings and ordering is applied by the analytical queries.
 
 Executed analytics: TOP 5 states and categories by product sales, payment-type
 distribution, TOP 5 sellers and customers. All five count queries and analytical
-queries passed. Power BI remains the next stage.
+queries passed. Power BI now imports CSV extracts from these five validated views. The final PBIX does not use a direct/live Synapse connection because of authentication restrictions of the available account. See the [dashboard](../../README.md#power-bi-dashboard) and read-only `scripts/export_powerbi.ps1` runner.
 
 References: [Managed Identity and database-scoped credentials](https://learn.microsoft.com/en-us/azure/synapse-analytics/sql/develop-storage-files-storage-access-control),
 [AzureRM Workspace resource](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/synapse_workspace).
